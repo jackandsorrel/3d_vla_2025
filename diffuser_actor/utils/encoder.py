@@ -651,14 +651,10 @@ class Encoder(nn.Module):
             bs, _, c = points.shape
             
             if self.use_repsurf:
-                # torch.autograd.set_detect_anomaly(True)
-                # TODO: finish adding repsurf in here
-                points = points.requires_grad_(True) 
                 points_feature = self.umbrella_module(points) # shape of points feature: [B, C, N]
                 points_feature = points_feature.permute(0, 2, 1)
                 center, normal, neighborhood_embed = self.sa(points, points_feature, None)
             else:
-                points = points.requires_grad_(True) 
                 neighborhood, center, _ = self.group_module(points) # torch.Size([6, 256, 3])
                 neighborhood_embed = self.pointnet(neighborhood) # torch.Size([6, 256, 60])
 
@@ -668,18 +664,15 @@ class Encoder(nn.Module):
             return matched_embed, valid_mask
         
         elif "patch" in self.pcd_method:
-            # TODO: fix this
             bs = points.shape[0]
             points = einops.rearrange(points, 'bs ncam C H W -> (bs ncam) C H W')
-            # print(f"Points shape: {points.shape}")
             pcd_patches = self.imagetopatch(images=points, patch_size=int(self.image_size[0] / 32)) # shape [(bt ncam) patch_num H W c]
             pcd_patches = einops.rearrange(
                 pcd_patches,
                 "bt patch_num H W c -> bt patch_num (H W) c"
             )
-            # print(f"Patches shape:{pcd_patches.shape}")
             if "pointnet" in self.pcd_backbone:
-                pcd_feats = self.pointnet(pcd_patches)  # torch.size([24, 32 * 32, 60])
+                pcd_feats = self.pointnet(pcd_patches)  # torch.size([bs, patch_num, dim])
                 matched_embed = einops.rearrange(pcd_feats, '(bs ncam) P dim -> bs (ncam P) dim', bs=bs)
             elif "conv" in self.pcd_backbone:
                 pcd_feats = self.conv(pcd_patches)

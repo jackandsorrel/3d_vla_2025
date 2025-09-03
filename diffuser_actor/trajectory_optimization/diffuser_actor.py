@@ -167,7 +167,7 @@ class DiffuserActor(nn.Module):
                     output_feats[valid_mask] = concatenated[valid_mask]
                     
                     # For invalid patches, double the original feature
-                    expanded_feats = torch.cat([context_feats, context_feats], dim=-1)  # shape: [6, 4096, 120]
+                    expanded_feats = torch.cat([context_feats, context_feats], dim=-1)
                     output_feats[~valid_mask] = expanded_feats[~valid_mask]
                 else:
                     output_feats = concatenated
